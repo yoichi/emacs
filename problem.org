@@ -1,4 +1,21 @@
 
+* Point Location Wrong
+
+** Repeatable Cause
+1. Start emacs -Q
+2. Delete the word "buffer"
+3. Move up a couple of lines, and delete the word "want".
+4. undo
+5. Point will be left at where you deleted the word "buffer".
+
+> Also, can you try:
+>
+> (setq undo-auto--current-boundary-timer t)
+>
+> and see if that stops it.
+
+No. Still same thing.
+
 
 * Before Change
 

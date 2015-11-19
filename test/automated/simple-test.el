@@ -252,5 +252,28 @@
                  '("(s1) (s4)" . " (s2) (s3) (s5)"))))
 
 
+;; Test for a regression introduced by undo-auto--boundaries changes.
+;; https://lists.gnu.org/archive/html/emacs-devel/2015-11/msg01652.html
+(defun undo-test-kill-c-a-then-undo ()
+  (with-temp-buffer
+    (switch-to-buffer (current-buffer))
+    (setq buffer-undo-list nil)
+    (insert "a\nb\n\c\n")
+    (goto-char (point-max))
+    ;; delete c, then a, then undo
+    (kmacro-call-macro nil nil nil
+                       [left backspace left left left
+                             backspace
+                             67108911
+                             ])
+    (point)))
+
+(ert-deftest undo-point-in-wrong-place ()
+  (should
+   ;; returns 5 with the bug
+   (= 2
+      (undo-test-kill-c-a-then-undo))))
+
+
 (provide 'simple-test)
 ;;; simple-test.el ends here
