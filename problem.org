@@ -1,0 +1,110 @@
+
+
+* Before Change
+
+** Without undo
+
+Value: (nil
+ (#("want" 0 4
+    (fontified t face font-lock-comment-face))
+  . 39)
+ (#<marker at 39 in *scratch*> . -4)
+ (#<marker at 39 in *scratch*> . -1)
+ (#<marker in no buffer> . -4)
+ (#<marker in no buffer> . -4)
+ 43 nil
+ (#("buffer" 0 6
+    (fontified t face font-lock-comment-face))
+  . 183)
+ (#<marker at 39 in *scratch*> . -6)
+ (#<marker at 179 in *scratch*> . -4)
+ (#<marker at 179 in *scratch*> . -4)
+ (#<marker in no buffer> . -6)
+ (#<marker in no buffer> . -6)
+ 189
+ (t . 0)
+ nil
+ (1 . 192)
+ (t . 0))
+
+
+** With Undo
+
+
+ (nil
+ (39 . 43)
+ nil
+ (#("want" 0 4
+    (fontified t face font-lock-comment-face))
+  . 39)
+ (#<marker at 43 in *scratch*> . -4)
+ (#<marker at 40 in *scratch*> . -1)
+ (#<marker in no buffer> . -4)
+ (#<marker in no buffer> . -4)
+ 43 nil
+ (#("buffer" 0 6
+    (fontified t face font-lock-comment-face))
+  . 183)
+ (#<marker at 43 in *scratch*> . -6)
+ (#<marker at 183 in *scratch*> . -3)
+ (#<marker at 183 in *scratch*> . -3)
+ (#<marker in no buffer> . -6)
+ (#<marker in no buffer> . -6)
+ 189
+ (t . 0)
+ nil
+ (1 . 192)
+ (t . 0))
+
+
+* After Change
+
+
+
+** Without Undo
+
+ (nil
+ (#("want" 0 4
+    (fontified t face font-lock-comment-face))
+  . 39)
+ (#<marker at 39 in *scratch*> . -4)
+ (#<marker at 39 in *scratch*> . -2)
+ (#<marker in no buffer> . -4)
+ 183 nil
+ (#("buffer" 0 6
+    (fontified t face font-lock-comment-face))
+  . 183)
+ (#<marker at 39 in *scratch*> . -6)
+ (#<marker at 179 in *scratch*> . -2)
+ (#<marker at 179 in *scratch*> . -2)
+ (#<marker in no buffer> . -6)
+ (t . 0)
+ nil
+ (1 . 192)
+ (t . 0))
+
+
+** With Undo
+
+(nil
+ (39 . 43)
+ nil
+ (#("want" 0 4
+    (fontified t face font-lock-comment-face))
+  . 39)
+ (#<marker at 183 in *scratch*> . -4)
+ (#<marker at 41 in *scratch*> . -2)
+ (#<marker in no buffer> . -4)
+ 183 nil
+ (#("buffer" 0 6
+    (fontified t face font-lock-comment-face))
+  . 183)
+ (#<marker at 183 in *scratch*> . -6)
+ (#<marker at 183 in *scratch*> . -2)
+ (#<marker at 183 in *scratch*> . -2)
+ (#<marker in no buffer> . -6)
+ (#<marker in no buffer> . -6)
+ (t . 0)
+ nil
+ (1 . 192)
+ (t . 0))
