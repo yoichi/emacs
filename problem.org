@@ -29,7 +29,8 @@ Value: (nil
  (#<marker at 39 in *scratch*> . -1)
  (#<marker in no buffer> . -4)
  (#<marker in no buffer> . -4)
- 43 nil
+ 43 
+ nil
  (#("buffer" 0 6
     (fontified t face font-lock-comment-face))
   . 183)
@@ -76,30 +77,30 @@ Value: (nil
 
 * After Change
 
-
-
 ** Without Undo
 
- (nil
+#+begin_src emacs-lisp
+ (nil                                  ;; boundary
  (#("want" 0 4
     (fontified t face font-lock-comment-face))
-  . 39)
- (#<marker at 39 in *scratch*> . -4)
- (#<marker at 39 in *scratch*> . -2)
- (#<marker in no buffer> . -4)
- 183 nil
+  . 39)                                ;; text that was deleted
+ (#<marker at 39 in *scratch*> . -4)   ;; marker was moved
+ (#<marker at 39 in *scratch*> . -2)   ;; marker was moved
+ (#<marker in no buffer> . -4)         ;; marker was moved 
+ 183                                   ;; position of point
+ nil                                   ;; boundary
  (#("buffer" 0 6
     (fontified t face font-lock-comment-face))
-  . 183)
- (#<marker at 39 in *scratch*> . -6)
- (#<marker at 179 in *scratch*> . -2)
- (#<marker at 179 in *scratch*> . -2)
- (#<marker in no buffer> . -6)
- (t . 0)
- nil
- (1 . 192)
- (t . 0))
-
+  . 183)                               ;; text that was deleted
+ (#<marker at 39 in *scratch*> . -6)   ;; marker moved
+ (#<marker at 179 in *scratch*> . -2)  ;; marker moved
+ (#<marker at 179 in *scratch*> . -2)  ;; marker moved
+ (#<marker in no buffer> . -6)         ;; marker moved
+ (t . 0)                               ;; buffer become modified
+ nil                                   ;; boundary
+ (1 . 192)                             ;; text inserted (initial message)
+ (t . 0))                              ;; buffer become modified
+#+end_src
 
 ** With Undo
 
@@ -125,3 +126,108 @@ Value: (nil
  nil
  (1 . 192)
  (t . 0))
+
+
+* Investigation
+
+I've added a test case to simple-test.el.
+
+I have tried added an undo-log command. Bizarrely, though the log command 
+changes the behaviour.
+
+
+(defvar undo-log nil)
+;;(setq undo-log t)
+
+(defun undo-log (&rest args)
+  (when
+      undo-log
+      (with-current-buffer
+          (get-buffer-create "*undo-log*")
+        (goto-char (point-max))
+        (insert (apply 'format args))
+        (insert "\n"))))
+
+With undo-log set to t, my unit test runs correctly. Otherwise it
+fails. So, something is very wrong!
+
+
+Tested further -- adding to a temp-buffer doesn't have the same
+effect. So this only works because a undoable change has happened in
+*undo-log*.
+
+So, if we move this code up the stack till it stops working, we should
+find the error.
+
+(defvar undo-test nil)
+
+(defun undo-test-change()
+ (when undo-test
+   (with-current-buffer
+        (get-buffer-create "*undo-log*")
+      (insert "a"))))
+    
+Test undo-auto--boundaries -- works
+
+
+
+So this code is worrying...
+
+(defun undo-auto--add-boundary ()
+  "Add an `undo-boundary' in appropriate buffers."
+  (undo-auto--boundaries
+   (if undo-auto--this-command-amalgamating
+       'amalgamate
+     'command))
+  (setq undo-auto--this-command-amalgamating nil))
+
+If another --add-boundary is signallyed as a result of this command,
+the --this-command-amalgamating will not have been reset to nil, so
+that command may be amagamating also? Perhaps we should set to nil
+before we call 
+
+(defun undo-auto--add-boundary ()
+  "Add an `undo-boundary' in appropriate buffers."
+  (undo-auto--boundaries
+   (let ((amal undo-auto--this-command-amalgamating))
+       (setq undo-auto--this-command-amalgamating nil)
+       (if amal
+           'amalgamate
+         'command))))
+
+
+Tried that -- nicer perhaps, but makes no difference.
+
+
+** buffer-undo-list
+
+It's this line that is wrong -- the 183 should be 43. So, we have a
+problem with record_point I think.
+
+ (#<marker in no buffer> . -4)         ;; marker was moved 
+ 183                                   ;; position of point
+ nil                                   ;; boundary
+
+
+The value comes from last_boundary_position.
+
+This is set in undo-boundary
+
+  last_boundary_position = PT;
+  last_boundary_buffer = current_buffer;
+
+So, if a boundary is added in another buffer this all changes.
+
+  if (at_boundary
+      && current_buffer == last_boundary_buffer
+      && last_boundary_position != pt)
+    bset_undo_list (current_buffer,
+		    Fcons (make_number (last_boundary_position),
+			   BVAR (current_buffer, undo_list)));
+
+
+Hence the bug. Not quite sure, why the bug fixes things. But, either
+way, we need a new way of storing this data which is not dependent on
+the buffer before the last.
+
+last_boundary_position should be local?

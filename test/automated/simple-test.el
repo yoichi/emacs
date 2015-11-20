@@ -260,12 +260,18 @@
     (setq buffer-undo-list nil)
     (insert "a\nb\n\c\n")
     (goto-char (point-max))
-    ;; delete c, then a, then undo
+    ;; We use a keyboard macro because it adds undo events in the same
+    ;; way as if a user were involved.
     (kmacro-call-macro nil nil nil
-                       [left backspace left left left
-                             backspace
-                             67108911
-                             ])
+                       [left
+                        ;; Delete "c"
+                        backspace
+                        left left left
+                        ;; Delete "a"
+                        backspace
+                        ;; C-/ or undo
+                        67108911
+                        ])
     (point)))
 
 (ert-deftest undo-point-in-wrong-place ()
