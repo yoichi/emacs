@@ -2792,14 +2792,6 @@ with < or <= based on USE-<."
 ;; This section adds a new undo-boundary at either after a command is
 ;; called or in some cases on a timer called after a change is made in
 ;; any buffer.
-(defvar undo-test nil)
-
-(defun undo-test-change ()
-  (when undo-test
-    (with-current-buffer
-        (get-buffer-create "*undo-log*")
-      (insert "a"))))
-
 (defvar-local undo-auto--last-boundary-cause nil
   "Describe the cause of the last undo-boundary.
 
@@ -2860,7 +2852,6 @@ REASON describes the reason that the boundary is being added; see
   "Check recently changed buffers and add a boundary if necessary.
 REASON describes the reason that the boundary is being added; see
 `undo-last-boundary' for more information."
-  (undo-test-change)
   (dolist (b undo-auto--undoably-changed-buffers)
           (when (buffer-live-p b)
             (with-current-buffer b

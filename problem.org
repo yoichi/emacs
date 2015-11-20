@@ -231,3 +231,48 @@ way, we need a new way of storing this data which is not dependent on
 the buffer before the last.
 
 last_boundary_position should be local?
+
+
+** Walk Though of old undo
+
+Need to read this though backwards!
+
+#+begin_src emacs-lisp
+  (nil
+   (#("want" 0 4
+      (fontified t face font-lock-comment-face))
+    . 39)
+   (#<marker at 39 in *scratch*> . -4)
+   (#<marker at 39 in *scratch*> . -1)
+   (#<marker in no buffer> . -4)
+   (#<marker in no buffer> . -4)
+   43
+   nil
+   (#("buffer" 0 6
+      (fontified t face font-lock-comment-face))
+    . 183)
+   (#<marker at 39 in *scratch*> . -6)
+   (#<marker at 179 in *scratch*> . -4)
+   (#<marker at 179 in *scratch*> . -4)
+   (#<marker in no buffer> . -6)
+   (#<marker in no buffer> . -6)
+   ;; we (were) at the boundary, the last_boundary_buffer was
+   189
+   ;; We are about to delete so record_first_change adds this called
+   ;; from within record_point
+   (t . 0)
+   ;; undo-boundary -- last_boundary_position will be set to 192
+   ;; presumably?
+   nil
+   ;; text inserted -- 192 is after blurb and two new lines
+   (1 . 192)
+   ;; text modified the first time
+   (t . 0))
+#+end_src
+
+
+
+So, we only actually record point in this way before a delete, and
+only from one of the two calls from record_delete
+
+So, we can rewrite record_point into two functions
