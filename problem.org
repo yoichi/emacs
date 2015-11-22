@@ -276,3 +276,59 @@ So, we only actually record point in this way before a delete, and
 only from one of the two calls from record_delete
 
 So, we can rewrite record_point into two functions
+
+
+* Stefan
+
+>     PT is the position of point that will naturally occur as a result of the
+>     undo record that will be added just after this command terminates.  */
+
+This comment is invalidated by your change.
+
+> +      record_point (beg + SCHARS (string));
+
+Hmm I thought the sign on sbeg took care of this case already (i.e. the
+record_point should only record something when point was neither at the
+beginning nor at the end of the deleted string).
+
+As for the source of the bug (i.e. what change caused the new behavior):
+in the old code, undo-boundary was called right before every command
+(whether there was a need to push a boundary or not), so contrary to the
+comment in the code, last_boundary_position was actually recording
+"position of point at beginning of the command" rather than "position of
+point last time we inserted a boundary".
+
+So the hunk below should recover the old behavior (well, more or less:
+it wouldn't compile as is, but I hope you get the idea).  But to fix it
+right, we should rename these vars and adjust their comment to better
+reflect the way they're really used.
+
+
+        Stefan
+
+
+diff --git a/src/keyboard.c b/src/keyboard.c
+index 849066c..125091e 100644
+--- a/src/keyboard.c
++++ b/src/keyboard.c
+@@ -1448,6 +1448,8 @@ command_loop_1 (void)
+             /* Ensure that we have added appropriate undo-boundaries as a
+                result of changes from the last command. */
+             call0 (Qundo_auto__add_boundary);
++            last_boundary_position = PT;
++            last_boundary_buffer = current_buffer;
+
+             call1 (Qcommand_execute, Vthis_command);
+
+
+
+But how does this solve the problem where things change in other bufers?
+
+It doesn't -- but that is more complicated, so don't worry.
+
+Are these things not already available here?
+
+
+      prev_buffer = current_buffer;
+      prev_modiff = MODIFF;
+      last_point_position = PT;

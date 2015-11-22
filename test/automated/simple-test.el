@@ -274,11 +274,30 @@
                         ])
     (point)))
 
+(defun undo-test-point-after-forward-kill ()
+  (with-temp-buffer
+    (switch-to-buffer (current-buffer))
+    (setq buffer-undo-list nil)
+    (insert "kill word forward")
+    ;; Move to word "word".
+    (goto-char 6)
+    (kmacro-call-macro nil nil nil
+                       [
+                        ;; kill-word
+                        C-delete
+                        ;; undo
+                        67108911
+                        ])
+    (point)))
+
 (ert-deftest undo-point-in-wrong-place ()
   (should
    ;; returns 5 with the bug
    (= 2
-      (undo-test-kill-c-a-then-undo))))
+      (undo-test-kill-c-a-then-undo)))
+  (should
+   (= 6
+      (undo-test-point-after-forward-kill))))
 
 
 (provide 'simple-test)

@@ -22,6 +22,7 @@ along with GNU Emacs.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "lisp.h"
 #include "buffer.h"
+#include <stdio.h>
 
 /* The first time a command records something for undo.
    it also allocates the undo-boundary object
@@ -69,10 +70,13 @@ record_point (ptrdiff_t pt)
 
   /* If we are just after an undo boundary, and
      point wasn't at start of deleted range, record where it was.  */
-  if (at_boundary)
+  if (at_boundary
+      && current_buffer == last_boundary_buffer
+      && last_boundary_position != pt){
     bset_undo_list (current_buffer,
 		    Fcons (make_number (pt),
 			   BVAR (current_buffer, undo_list)));
+  }
 }
 
 /* Record an insertion that just happened or is about to happen,
@@ -162,7 +166,6 @@ record_marker_adjustments (ptrdiff_t from, ptrdiff_t to)
 /* Record that a deletion is about to take place, of the characters in
    STRING, at location BEG.  Optionally record adjustments for markers
    in the region STRING occupies in the current buffer.  */
-
 void
 record_delete (ptrdiff_t beg, Lisp_Object string, bool record_markers)
 {
@@ -170,6 +173,10 @@ record_delete (ptrdiff_t beg, Lisp_Object string, bool record_markers)
 
   if (EQ (BVAR (current_buffer, undo_list), Qt))
     return;
+
+  if (PT != beg ){
+    record_point (PT);
+  }
 
   if (PT == beg + SCHARS (string))
     {
@@ -179,7 +186,7 @@ record_delete (ptrdiff_t beg, Lisp_Object string, bool record_markers)
   else
     {
       XSETFASTINT (sbeg, beg);
-      record_point (beg + SCHARS (string));
+      prepare_record ();
     }
 
   /* primitive-undo assumes marker adjustments are recorded
