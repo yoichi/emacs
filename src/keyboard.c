@@ -202,8 +202,12 @@ uintmax_t num_input_events;
 
 static EMACS_INT last_auto_save;
 
-/* The value of point when the last command was started.  */
-static ptrdiff_t last_point_position;
+/* The value of point when the last command was started. */
+ptrdiff_t last_point_position;
+
+/* The current buffer when the last command was started. */
+struct buffer *prev_buffer;
+
 
 /* The frame in which the last input event occurred, or Qmacro if the
    last event came from a macro.  We use this to determine when to

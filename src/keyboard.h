@@ -245,6 +245,10 @@ extern KBOARD *current_kboard;
 /* Total number of times read_char has returned, modulo UINTMAX_MAX + 1.  */
 extern uintmax_t num_input_events;
 
+extern ptrdiff_t last_point_position;
+
+extern struct buffer *prev_buffer;
+
 /* Nonzero means polling for input is temporarily suppressed.  */
 extern int poll_suppress_count;
 

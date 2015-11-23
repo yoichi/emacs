@@ -22,7 +22,7 @@ along with GNU Emacs.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "lisp.h"
 #include "buffer.h"
-#include <stdio.h>
+#include "keyboard.h"
 
 /* The first time a command records something for undo.
    it also allocates the undo-boundary object
@@ -70,9 +70,7 @@ record_point (ptrdiff_t pt)
 
   /* If we are just after an undo boundary, and
      point wasn't at start of deleted range, record where it was.  */
-  if (at_boundary
-      && current_buffer == last_boundary_buffer
-      && last_boundary_position != pt){
+  if (at_boundary){
     bset_undo_list (current_buffer,
 		    Fcons (make_number (pt),
 			   BVAR (current_buffer, undo_list)));
@@ -174,9 +172,11 @@ record_delete (ptrdiff_t beg, Lisp_Object string, bool record_markers)
   if (EQ (BVAR (current_buffer, undo_list), Qt))
     return;
 
-  if (PT != beg ){
-    record_point (PT);
-  }
+  if (last_point_position != beg &&
+      current_buffer == prev_buffer )
+    {
+      record_point (last_point_position);
+    }
 
   if (PT == beg + SCHARS (string))
     {
