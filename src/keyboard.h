@@ -245,7 +245,8 @@ extern KBOARD *current_kboard;
 /* Total number of times read_char has returned, modulo UINTMAX_MAX + 1.  */
 extern uintmax_t num_input_events;
 
-extern ptrdiff_t last_point_position;
+ptrdiff_t point_before_last_command_or_undo;
+struct buffer *buffer_before_last_command_or_undo;
 
 extern struct buffer *prev_buffer;
 

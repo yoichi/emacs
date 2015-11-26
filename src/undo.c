@@ -172,10 +172,10 @@ record_delete (ptrdiff_t beg, Lisp_Object string, bool record_markers)
   if (EQ (BVAR (current_buffer, undo_list), Qt))
     return;
 
-  if (last_point_position != beg &&
-      current_buffer == prev_buffer )
+  if (point_before_last_command_or_undo != beg &&
+      buffer_before_last_command_or_undo == current_buffer)
     {
-      record_point (last_point_position);
+      record_point (point_before_last_command_or_undo);
     }
 
   if (PT == beg + SCHARS (string))
@@ -294,6 +294,9 @@ but another undo command will undo to the previous boundary.  */)
     }
 
   Fset (Qundo_auto__last_boundary_cause, Qexplicit);
+  point_before_last_command_or_undo = PT;
+  buffer_before_last_command_or_undo = current_buffer;
+
   return Qnil;
 }
 
