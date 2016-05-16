@@ -293,6 +293,10 @@
 
 ;; Change state to NEW-STATE---either emacs-state, vi-state, or insert-state.
 (defun viper-change-state (new-state)
+  (if (eq new-state 'emacs-state)
+      (setq undo-auto-disable-boundaries nil)
+    (setq undo-auto-disable-boundaries t))
+
   ;; Keep viper-post/pre-command-hooks fresh.
   ;; We remove then add viper-post/pre-command-sentinel since it is very
   ;; desirable that viper-pre-command-sentinel is the last hook and
@@ -1671,6 +1675,7 @@ invokes the command before that, etc."
 
     (undo-start)
     (undo-more 2)
+    (viper-adjust-undo)
     ;;(setq undo-beg-posn (or undo-beg-posn (point))
     ;;    undo-end-posn (or undo-end-posn (point)))
     ;;(setq undo-beg-posn (or undo-beg-posn before-undo-pt)
@@ -1711,36 +1716,16 @@ invokes the command before that, etc."
 ;; In VI, unlike Emacs, if you open a line, say, and add a bunch of lines,
 ;; they are undone all at once.
 (defun viper-adjust-undo ()
-  (if viper-undo-needs-adjustment
-      (let ((inhibit-quit t)
-	    tmp tmp2)
-	(setq viper-undo-needs-adjustment nil)
-	(if (listp buffer-undo-list)
-	    (if (setq tmp (memq viper-buffer-undo-list-mark buffer-undo-list))
-		(progn
-		  (setq tmp2 (cdr tmp)) ; the part after mark
-
-		  ;; cut tail from buffer-undo-list temporarily by direct
-		  ;; manipulation with pointers in buffer-undo-list
-		  (setcdr tmp nil)
-
-		  (setq buffer-undo-list (delq nil buffer-undo-list))
-		  (setq buffer-undo-list
-			(delq viper-buffer-undo-list-mark buffer-undo-list))
-		  ;; restore tail of buffer-undo-list
-		  (setq buffer-undo-list (nconc buffer-undo-list tmp2)))
-	      (setq buffer-undo-list (delq nil buffer-undo-list)))))
-    ))
+  (setq viper-undo-needs-adjustment nil)
+  (setq buffer-undo-list
+        (cons nil buffer-undo-list)))
 
 
 (defun viper-set-complex-command-for-undo ()
-  (if (listp buffer-undo-list)
-      (if (not viper-undo-needs-adjustment)
-	  (let ((inhibit-quit t))
-	    (setq buffer-undo-list
-		  (cons viper-buffer-undo-list-mark buffer-undo-list))
-	    (setq viper-undo-needs-adjustment t)))))
-
+  (if (not viper-undo-needs-adjustment)
+      (setq viper-undo-needs-adjustment t)
+      (setq buffer-undo-list
+            (cons nil buffer-undo-list))))
 
 ;;; Viper's destructive Command ring utilities
 

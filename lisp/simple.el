@@ -2839,6 +2839,8 @@ buffers that were changed during the last command.")
 
 If set to non-nil, this will effectively disable the timer.")
 
+(defvar-local undo-auto-disable-boundaries nil)
+
 (defvar undo-auto--this-command-amalgamating nil
   "Non-nil if `this-command' should be amalgamated.
 This variable is set to nil by `undo-auto--boundaries' and is set
@@ -2878,7 +2880,8 @@ REASON describes the reason that the boundary is being added; see
   (dolist (b undo-auto--undoably-changed-buffers)
           (when (buffer-live-p b)
             (with-current-buffer b
-              (undo-auto--ensure-boundary cause))))
+              (unless undo-auto-disable-boundaries
+                (undo-auto--ensure-boundary cause)))))
   (setq undo-auto--undoably-changed-buffers nil))
 
 (defun undo-auto--boundary-timer ()
@@ -2905,10 +2908,10 @@ See also `undo-auto--buffer-undoably-changed'.")
   "Add an `undo-boundary' in appropriate buffers."
   (undo-auto--boundaries
    (let ((amal undo-auto--this-command-amalgamating))
-       (setq undo-auto--this-command-amalgamating nil)
-       (if amal
-           'amalgamate
-         'command))))
+     (setq undo-auto--this-command-amalgamating nil)
+     (if amal
+         'amalgamate
+       'command))))
 
 (defun undo-auto-amalgamate ()
   "Amalgamate undo if necessary.
