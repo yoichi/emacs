@@ -293,10 +293,6 @@
 
 ;; Change state to NEW-STATE---either emacs-state, vi-state, or insert-state.
 (defun viper-change-state (new-state)
-  (if (eq new-state 'emacs-state)
-      (setq undo-auto-disable-boundaries nil)
-    (setq undo-auto-disable-boundaries t))
-
   ;; Keep viper-post/pre-command-hooks fresh.
   ;; We remove then add viper-post/pre-command-sentinel since it is very
   ;; desirable that viper-pre-command-sentinel is the last hook and
@@ -1716,15 +1712,17 @@ invokes the command before that, etc."
 ;; In VI, unlike Emacs, if you open a line, say, and add a bunch of lines,
 ;; they are undone all at once.
 (defun viper-adjust-undo ()
+  (setq undo-auto-disable-boundaries nil)
   (setq viper-undo-needs-adjustment nil)
   (setq buffer-undo-list
         (cons nil buffer-undo-list)))
 
 
 (defun viper-set-complex-command-for-undo ()
-  (if (not viper-undo-needs-adjustment)
-      (setq viper-undo-needs-adjustment t)
-      (setq buffer-undo-list
+  (when (not viper-undo-needs-adjustment)
+    (setq undo-auto-disable-boundaries t)
+    (setq viper-undo-needs-adjustment t)
+    (setq buffer-undo-list
             (cons nil buffer-undo-list))))
 
 ;;; Viper's destructive Command ring utilities
