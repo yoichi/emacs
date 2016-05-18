@@ -1714,16 +1714,14 @@ invokes the command before that, etc."
 (defun viper-adjust-undo ()
   (setq undo-auto-disable-boundaries nil)
   (setq viper-undo-needs-adjustment nil)
-  (setq buffer-undo-list
-        (cons nil buffer-undo-list)))
+  (undo-boundary))
 
 
 (defun viper-set-complex-command-for-undo ()
   (when (not viper-undo-needs-adjustment)
     (setq undo-auto-disable-boundaries t)
     (setq viper-undo-needs-adjustment t)
-    (setq buffer-undo-list
-            (cons nil buffer-undo-list))))
+    (undo-boundary)))
 
 ;;; Viper's destructive Command ring utilities
 
