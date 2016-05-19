@@ -1718,7 +1718,7 @@ invokes the command before that, etc."
 
 
 (defun viper-set-complex-command-for-undo ()
-  (when (not viper-undo-needs-adjustment)
+  (when (not viper-undo-in-complex-command)
     (setq undo-auto-disable-boundaries t)
     (setq viper-undo-in-complex-command t)
     (undo-boundary)))
