@@ -2839,7 +2839,17 @@ buffers that were changed during the last command.")
 
 If set to non-nil, this will effectively disable the timer.")
 
-(defvar-local undo-auto-disable-boundaries nil)
+(defvar-local undo-auto-disable-boundaries nil
+  "Disable the automatic addition of boundaries.
+
+If set to non-nil, `undo-boundary' will not be called
+automatically in a buffer either at the end of a command, or as a
+result of `undo-auto-current-boundary-timer'.
+
+When this is set to non-nil, it is important to ensure that
+`undo-boundary' is called frequently enough. Failure to do so
+will result in user-visible warnings that the situation is
+probably a bug.")
 
 (defvar undo-auto--this-command-amalgamating nil
   "Non-nil if `this-command' should be amalgamated.
