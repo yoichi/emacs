@@ -1393,6 +1393,15 @@ normally called periodically by the timer in this variable.  Setting
 this variable to non-@code{nil} prevents this behavior.
 @end defvar
 
+@defvar undo-auto-disable-boundaries
+Some modes may wish to provide their own @code{undo-boundary}
+handling so that, for example, several commands may be undone with a
+single undo. Setting this variable to a non-@code{nil} value disables
+the automatic addition of these boundaries. In these circumstances,
+the developer must ensure that boundaries get added often enough;
+otherwise, @code{buffer-undo-list} will get too large.
+@end defvar
+
 @defvar undo-in-progress
 This variable is normally @code{nil}, but the undo commands bind it to
 @code{t}.  This is so that various kinds of change hooks can tell when
