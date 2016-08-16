@@ -89,6 +89,12 @@ If this has the same value as `json-null', you might not be able to tell
 the difference between `false' and `null'.  Consider let-binding this
 around your call to `json-read' instead of `setq'ing it.")
 
+(defvar json-empty-object :json-empty-object
+  "Value to use when reading JSON `{}'.
+If this has the same value as `json-null', you might not be able to tell
+the difference between `{}' and `null'.  Consider let-binding this
+around your call to `json-read' instead of `setq'ing it.")
+
 (defvar json-null nil
   "Value to use when reading JSON `null'.
 If this has the same value as `json-false', you might not be able to
@@ -442,7 +448,7 @@ Please see the documentation of `json-object-type'."
   (cond ((eq json-object-type 'hash-table)
          (make-hash-table :test 'equal))
         (t
-         ())))
+         json-empty-object)))
 
 (defun json-add-to-object (object key value)
   "Add a new KEY -> VALUE association to OBJECT.
@@ -454,7 +460,9 @@ Please see the documentation of `json-object-type' and `json-key-type'."
              (cdr (assq json-object-type '((hash-table . string)
                                            (alist . symbol)
                                            (plist . keyword))))
-           json-key-type)))
+           json-key-type))
+        (object (cond ((eq object json-empty-object) ())
+                      (t object))))
     (setq key
           (cond ((eq json-key-type 'string)
                  key)
@@ -501,10 +509,12 @@ Please see the documentation of `json-object-type' and `json-key-type'."
           (signal 'json-object-format (list "," (json-peek))))))
     ;; Skip over the "}"
     (json-advance)
-    (pcase json-object-type
-      (`alist (nreverse elements))
-      (`plist (json--plist-reverse elements))
-      (_ elements))))
+    (cond ((eq elements json-empty-object) elements)
+          (t
+           (pcase json-object-type
+             (`alist (nreverse elements))
+             (`plist (json--plist-reverse elements))
+             (_ elements))))))
 
 ;; Hash table encoding
 
@@ -697,6 +707,7 @@ Advances point just past JSON object."
   "Return a JSON representation of OBJECT as a string."
   (cond ((memq object (list t json-null json-false))
          (json-encode-keyword object))
+        ((eq object json-empty-object) "{}")
         ((stringp object)      (json-encode-string object))
         ((keywordp object)     (json-encode-string
                                 (substring (symbol-name object) 1)))
