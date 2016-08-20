@@ -588,7 +588,7 @@ Please see the documentation of `json-object-type' and `json-key-type'."
   "Return a JSON representation of LIST.
 Tries to DWIM: simple lists become JSON arrays, while alists and plists
 become JSON objects."
-  (cond ((null list)         "null")
+  (cond ((eq json-null list) "null")
         ((json-alist-p list) (json-encode-alist list))
         ((json-plist-p list) (json-encode-plist list))
         ((listp list)        (json-encode-array list))
@@ -700,12 +700,12 @@ Advances point just past JSON object."
         ((stringp object)      (json-encode-string object))
         ((keywordp object)     (json-encode-string
                                 (substring (symbol-name object) 1)))
-        ((symbolp object)      (json-encode-string
-                                (symbol-name object)))
         ((numberp object)      (json-encode-number object))
         ((arrayp object)       (json-encode-array object))
         ((hash-table-p object) (json-encode-hash-table object))
         ((listp object)        (json-encode-list object))
+        ((symbolp object)      (json-encode-string
+                                (symbol-name object)))
         (t                     (signal 'json-error (list object)))))
 
 ;; Pretty printing
@@ -722,6 +722,8 @@ Advances point just past JSON object."
     (let ((json-encoding-pretty-print t)
           ;; Ensure that ordering is maintained
           (json-object-type 'alist)
+          ;; Distinguish empty object and null
+          (json-null :json-null)
           (txt (delete-and-extract-region begin end)))
       (insert (json-encode (json-read-from-string txt))))))
 
