@@ -425,14 +425,30 @@ representation will be parsed correctly."
     (push "\"" res)
     (apply #'concat "\"" (nreverse res))))
 
-(defun json-encode-key (object)
-  "Return a JSON representation of OBJECT.
-If the resulting JSON object isn't a valid JSON object key,
-this signals `json-key-format'."
-  (let ((encoded (json-encode object)))
-    (unless (stringp (json-read-from-string encoded))
-      (signal 'json-key-format (list object)))
-    encoded))
+(defun json-encode-key (key)
+  "Return a JSON representation of object key.
+If key isn't valid Elisp object as key, this signals `json-key-format'."
+  (let ((json-key-type
+         (if (eq json-key-type nil)
+             (cdr (assq json-object-type '((hash-table . string)
+                                           (alist . symbol)
+                                           (plist . keyword))))
+           json-key-type)))
+    (json-encode-string
+     (cond ((eq json-key-type 'string)
+            (if (stringp key)
+                key
+              (signal 'json-key-format (list key))))
+           ((eq json-key-type 'symbol)
+            (if (symbolp key)
+                (symbol-name key)
+              (signal 'json-key-format (list key))))
+           ((eq json-key-type 'keyword)
+            (if (keywordp key)
+                (substring (symbol-name key) 1)
+              (signal 'json-key-format (list key))))
+           (t
+            (signal 'json-error (list key)))))))
 
 ;;; JSON Objects
 
