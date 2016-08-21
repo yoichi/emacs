@@ -174,6 +174,10 @@ Unlike `reverse', this keeps the property-value pairs intact."
     (while plist
       (let ((prop (pop plist))
             (val (pop plist)))
+        (when (and (not json-key-type)
+                   (keywordp prop))
+          (setq prop (intern
+                      (substring (symbol-name prop) 1))))
         (push (cons prop val) res)))
     (nreverse res)))
 
@@ -526,79 +530,85 @@ Please see the documentation of `json-object-type' and `json-key-type'."
 
 (defun json-encode-hash-table (hash-table)
   "Return a JSON representation of HASH-TABLE."
-  (if json-encoding-object-sort-predicate
-      (json-encode-alist (map-into hash-table 'list))
+  (let ((json-object-type 'hash-table))
+    (if json-encoding-object-sort-predicate
+        (let ((json-key-type
+               (or json-key-type
+                   'string)))
+          (json-encode-alist (map-into hash-table 'list)))
+      (format "{%s%s}"
+              (json-join
+               (let (r)
+                 (json--with-indentation
+                  (maphash
+                   (lambda (k v)
+                     (push (format
+                            (if json-encoding-pretty-print
+                                "%s%s: %s"
+                              "%s%s:%s")
+                            json--encoding-current-indentation
+                            (json-encode-key k)
+                            (json-encode v))
+                           r))
+                   hash-table))
+                 r)
+               json-encoding-separator)
+              (if (or (not json-encoding-pretty-print)
+                      json-encoding-lisp-style-closings)
+                  ""
+                json--encoding-current-indentation)))))
+
+;; List encoding (including alists and plists)
+
+(defun json-encode-alist (alist)
+  "Return a JSON representation of ALIST."
+  (let ((json-object-type 'alist))
+    (when json-encoding-object-sort-predicate
+      (setq alist
+            (sort alist (lambda (a b)
+                          (funcall json-encoding-object-sort-predicate
+                                   (car a) (car b))))))
     (format "{%s%s}"
             (json-join
-             (let (r)
-               (json--with-indentation
-                (maphash
-                 (lambda (k v)
-                   (push (format
-                          (if json-encoding-pretty-print
-                              "%s%s: %s"
-                            "%s%s:%s")
-                          json--encoding-current-indentation
-                          (json-encode-key k)
-                          (json-encode v))
-                         r))
-                 hash-table))
-               r)
+             (json--with-indentation
+              (mapcar (lambda (cons)
+                        (format (if json-encoding-pretty-print
+                                    "%s%s: %s"
+                                  "%s%s:%s")
+                                json--encoding-current-indentation
+                                (json-encode-key (car cons))
+                                (json-encode (cdr cons))))
+                      alist))
              json-encoding-separator)
             (if (or (not json-encoding-pretty-print)
                     json-encoding-lisp-style-closings)
                 ""
               json--encoding-current-indentation))))
 
-;; List encoding (including alists and plists)
-
-(defun json-encode-alist (alist)
-  "Return a JSON representation of ALIST."
-  (when json-encoding-object-sort-predicate
-    (setq alist
-          (sort alist (lambda (a b)
-                        (funcall json-encoding-object-sort-predicate
-                                 (car a) (car b))))))
-  (format "{%s%s}"
-          (json-join
-           (json--with-indentation
-            (mapcar (lambda (cons)
-                      (format (if json-encoding-pretty-print
-                                  "%s%s: %s"
-                                "%s%s:%s")
-                              json--encoding-current-indentation
-                              (json-encode-key (car cons))
-                              (json-encode (cdr cons))))
-                    alist))
-           json-encoding-separator)
-          (if (or (not json-encoding-pretty-print)
-                  json-encoding-lisp-style-closings)
-              ""
-            json--encoding-current-indentation)))
-
 (defun json-encode-plist (plist)
   "Return a JSON representation of PLIST."
-  (if json-encoding-object-sort-predicate
-      (json-encode-alist (json--plist-to-alist plist))
-    (let (result)
-      (json--with-indentation
-       (while plist
-         (push (concat
-                json--encoding-current-indentation
-                (json-encode-key (car plist))
-                (if json-encoding-pretty-print
-                    ": "
-                  ":")
-                (json-encode (cadr plist)))
-               result)
-         (setq plist (cddr plist))))
-      (concat "{"
-              (json-join (nreverse result) json-encoding-separator)
-              (if (and json-encoding-pretty-print
-                       (not json-encoding-lisp-style-closings))
+  (let ((json-object-type 'plist))
+    (if json-encoding-object-sort-predicate
+        (json-encode-alist (json--plist-to-alist plist))
+      (let (result)
+        (json--with-indentation
+         (while plist
+           (push (concat
                   json--encoding-current-indentation
-                "")
-              "}"))))
+                  (json-encode-key (car plist))
+                  (if json-encoding-pretty-print
+                      ": "
+                    ":")
+                  (json-encode (cadr plist)))
+                 result)
+           (setq plist (cddr plist))))
+        (concat "{"
+                (json-join (nreverse result) json-encoding-separator)
+                (if (and json-encoding-pretty-print
+                         (not json-encoding-lisp-style-closings))
+                    json--encoding-current-indentation
+                  "")
+                "}")))))
 
 (defun json-encode-list (list)
   "Return a JSON representation of LIST.
